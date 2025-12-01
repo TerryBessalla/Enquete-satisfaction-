@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Votre avis transforme notre avenir | AGL Digital</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* =========================================
+           1. CHARTE GRAPHIQUE & CONFIGURATION
+           ========================================= */
+        :root {
+            --agl-blue-dark: #1B2A4A; 
+            --agl-blue-medium: #2a4570;
+            --agl-yellow: #FFCC00;
+            --agl-yellow-bright: #ffd740;
+            --white: #ffffff;
+            --gray-light: #e0e0e0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: radial-gradient(circle at 30% 20%, #1e3a5f 0%, var(--agl-blue-dark) 50%, #0a1628 100%);
+            color: var(--white);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+            user-select: none;
+        }
+
+        /* =========================================
+           2. ANIMATIONS & PARTICULES (FOND)
+           ========================================= */
+        .particles {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 1; opacity: 0.6;
+        }
+        .particle {
+            position: absolute; width: 3px; height: 3px;
+            background: var(--agl-yellow); border-radius: 50%;
+            opacity: 0; animation: float 12s infinite ease-in-out;
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+        }
+        .particle-line {
+            position: absolute; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 204, 0, 0.2), transparent);
+            transform-origin: left center; opacity: 0;
+            animation: lineAppear 8s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(110vh) translateX(0) scale(0); opacity: 0; }
+            15% { opacity: 0.6; }
+            50% { transform: translateY(50vh) translateX(30px) scale(1); }
+            85% { opacity: 0.3; }
+            100% { transform: translateY(-10vh) translateX(-20px) scale(0.5); opacity: 0; }
+        }
+        @keyframes lineAppear {
+            0%, 100% { opacity: 0; } 50% { opacity: 1; }
+        }
+
+        /* =========================================
+           3. OVERLAY DE DÉMARRAGE (UX SONORE)
+           ========================================= */
+        #start-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, rgba(10, 22, 40, 0.98) 0%, rgba(27, 42, 74, 0.95) 100%);
+            backdrop-filter: blur(10px); z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            cursor: pointer; transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .play-btn {
+            width: 110px; height: 110px;
+            border: 3px solid var(--agl-yellow); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.8rem; color: var(--agl-yellow);
+            transition: all 0.4s; position: relative; z-index: 2;
+            background: rgba(255, 204, 0, 0.05);
+            box-shadow: 0 0 30px rgba(255, 204, 0, 0.3);
+            margin-bottom: 35px;
+        }
+        
+        .play-btn::before, .play-btn::after {
+            content: ''; position: absolute; border: 2px solid var(--agl-yellow);
+            border-radius: 50%; opacity: 0; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        }
+        .play-btn::before { width: 130px; height: 130px; animation: pulse-ring 2.5s infinite; }
+        .play-btn::after { width: 150px; height: 150px; animation: pulse-ring 2.5s 0.5s infinite; }
+        
+        @keyframes pulse-ring {
+            0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+            50% { opacity: 0.4; }
+            100% { transform: translate(-50%, -50%) scale(1.3); opacity: 0; }
+        }
+        
+        #start-overlay:hover .play-btn { transform: scale(1.15); background: rgba(255, 204, 0, 0.15); }
+        .start-text { letter-spacing: 4px; text-transform: uppercase; font-size: 1rem; font-weight: 500; opacity: 0.9; }
+
+        /* =========================================
+           4. INTERFACE & SCÈNES
+           ========================================= */
+        .container {
+            position: relative; z-index: 10; max-width: 950px; width: 90%;
+            text-align: center; padding: 40px 20px;
+        }
+        
+        .scene {
+            display: none; opacity: 0; transform: translateY(40px) scale(0.95);
+            transition: all 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .scene.active { display: block; opacity: 1; transform: translateY(0) scale(1); }
+
+        /* SCENE 1 : COMPTEUR */
+        .counter-wrapper {
+            font-size: clamp(7rem, 18vw, 13rem); font-weight: 900; color: var(--agl-yellow);
+            line-height: 0.9; text-shadow: 0 0 60px rgba(255, 204, 0, 0.4);
+            letter-spacing: -0.03em; position: relative; display: inline-block;
+        }
+        .counter-label { font-size: clamp(1.3rem, 3vw, 1.9rem); letter-spacing: 5px; text-transform: uppercase; margin-top: 30px; opacity: 0.85; }
+
+        /* Flash effect when count finishes */
+        .counter-flash {
+            position: absolute; inset: -20px; border-radius: 30px;
+            pointer-events: none; opacity: 0; transform: scale(0.9);
+            box-shadow: 0 0 120px rgba(255, 204, 0, 0.6);
+            transition: all 400ms cubic-bezier(.2,.9,.2,1);
+        }
+        .counter-flash.show { opacity: 1; transform: scale(1.05); }
+
+        /* SCENE 2 : TEXTE */
+        .intro-text { font-size: clamp(1.2rem, 3vw, 1.6rem); color: var(--gray-light); margin-bottom: 50px; font-weight: 300; }
+        .intro-text strong { color: var(--agl-yellow); font-weight: 700; }
+        #typing-area { min-height: 150px; display: flex; align-items: center; justify-content: center; }
+        .highlight-word {
+            font-size: clamp(2.2rem, 6vw, 4rem); font-weight: 700; color: var(--white);
+            text-transform: uppercase; position: relative; padding: 15px 30px;
+            transition: all 0.5s;
+        }
+        .highlight-word::after {
+            content: ''; position: absolute; bottom: 5px; left: 0; width: 100%; height: 4px;
+            background: linear-gradient(90deg, transparent, var(--agl-yellow), transparent);
+            box-shadow: 0 0 10px var(--agl-yellow);
+        }
+
+        /* SCENE 3 : FINAL CTA */
+        .final-title { font-size: clamp(2.2rem, 6vw, 3.5rem); font-weight: 700; color: var(--agl-yellow); margin-bottom: 30px; }
+        .final-subtitle { font-size: clamp(1.05rem, 2.5vw, 1.35rem); line-height: 1.8; margin-bottom: 24px; opacity: 0.9; }
+        .final-mini { font-size: 0.95rem; opacity: 0.9; margin-bottom: 18px; color: var(--gray-light); }
+
+        .time-badge {
+            display: inline-flex; align-items: center; gap: 8px; background: rgba(255, 204, 0, 0.12);
+            border: 1px solid rgba(255, 204, 0, 0.28); padding: 8px 18px; border-radius: 20px;
+            margin-bottom: 26px; font-size: 0.95rem;
+            transform-origin: center; transition: transform 300ms ease;
+        }
+        .time-badge .clock {
+            width: 18px; height: 18px; border-radius: 50%; display: inline-grid; place-items: center;
+            background: rgba(27,42,74,0.6); color: var(--agl-yellow); font-weight: 700;
+            animation: clockTick 1.8s infinite;
+        }
+        @keyframes clockTick {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(8deg) scale(1.06); }
+            100% { transform: rotate(0deg) scale(1); }
+        }
+
+        .cta-button {
+            background: linear-gradient(135deg, var(--agl-yellow) 0%, var(--agl-yellow-bright) 100%);
+            color: var(--agl-blue-dark); padding: 22px 65px; border-radius: 50px;
+            text-decoration: none; font-size: clamp(1.15rem, 2.5vw, 1.5rem); font-weight: 800;
+            text-transform: uppercase; letter-spacing: 2px;
+            box-shadow: 0 15px 40px rgba(255, 204, 0, 0.4); display: inline-block;
+            transition: all 0.4s; position: relative; overflow: hidden;
+        }
+        .cta-button:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 25px 60px rgba(255, 204, 0, 0.6); }
+        /* additional subtle pulse to attract attention */
+        .cta-button.pulse { animation: ctaPulse 2.8s infinite; }
+        @keyframes ctaPulse {
+            0% { transform: scale(1); }
+            40% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        /* small badge for mini-message */
+        .impact-note { margin-top: 10px; font-size: 0.95rem; opacity: 0.9; color: var(--gray-light); }
+
+        /* flash particle burst (temporary elements) */
+        .burst {
+            position: absolute; pointer-events: none; z-index: 50;
+        }
+
+        /* CONTROLE AUDIO */
+        .audio-controls {
+            position: fixed; bottom: 25px; right: 25px; z-index: 100;
+            opacity: 0; transform: translateY(20px); transition: all 0.5s ease;
+        }
+        .audio-controls.show { opacity: 1; transform: translateY(0); }
+        .mute-btn {
+            background: rgba(27, 42, 74, 0.9); border: 1px solid rgba(255, 204, 0, 0.3);
+            color: white; padding: 10px 20px; border-radius: 25px; cursor: pointer;
+            text-transform: uppercase; font-size: 0.85rem; font-weight: 500;
+        }
+        .mute-btn:hover { background: rgba(255, 204, 0, 0.2); border-color: var(--agl-yellow); }
+
+        /* responsive tweaks */
+        @media (max-width: 520px) {
+            .cta-button { padding: 14px 30px; font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="particles" id="particles"></div>
+
+    <div id="start-overlay" onclick="startExperience()">
+        <div class="play-btn">▶</div>
+        <div class="start-text">Cliquez pour découvrir</div>
+    </div>
+
+    <div class="audio-controls" id="audio-controls">
+        <button class="mute-btn" onclick="toggleMute()">🔊 Son activé</button>
+    </div>
+
+    <div class="container">
+        
+        <div id="scene-1" class="scene">
+            <div class="counter-section" style="position:relative;">
+                <div class="counter-wrapper" id="counter" data-value="0">0
+                    <div class="counter-flash" id="counter-flash"></div>
+                </div>
+                <div class="counter-label">Processus Digitalisés</div>
+                <div style="margin-top: 15px; opacity: 0.6; font-size: 1rem; letter-spacing: 2px;">DEPUIS JANVIER 2025</div>
+            </div>
+        </div>
+
+        <div id="scene-2" class="scene">
+            <div class="intro-section">
+                <div class="intro-text">
+                    <strong>Chaque jour</strong>, nous simplifions votre quotidien :
+                </div>
+                <div id="typing-area">
+                    <span id="typing-text" class="highlight-word"></span>
+                </div>
+            </div>
+        </div>
+
+        <div id="scene-3" class="scene">
+            <div class="final-section">
+                <h1 class="final-title">Votre avis façonne notre avenir</h1>
+                <p class="final-subtitle">Pour continuer de <strong>simplifier votre quotidien</strong>, nous avons besoin de vos retours.</p>
+                <!-- Mini-message émotionnel avant le CTA -->
+                <div class="final-mini">Votre voix compte réellement. Elle influence nos priorités produit.</div>
+                <div class="time-badge" id="time-badge">⏱️ Seulement 2 minutes</div>
+                <div class="impact-note">Anonyme • Rapide • Direct</div>
+                <br><br>
+                <a href="https://forms.gle/VOTRE_LIEN" target="_blank" class="cta-button" id="cta-button" onmouseenter="audio.playHover()">
+                    <span style="position: relative; z-index: 2;">Je donne mon avis</span>
+                </a>
+                <div style="margin-top: 25px; font-size: 0.85rem; opacity: 0.7; font-style: italic;">
+                    ✓ Anonyme et confidentiel
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        /* =========================================
+           5. MOTEUR JAVASCRIPT & AUDIO (AJOUTS)
+           ========================================= */
+
+        const audio = {
+            ctx: null, bgMusic: null, isMuted: false,
+            musicGain: null, fxGain: null,
+
+            init: function() {
+                window.AudioContext = window.AudioContext || window.webkitAudioContext;
+                try {
+                    this.ctx = new AudioContext();
+                } catch (e) {
+                    console.warn("AudioContext non disponible", e);
+                    this.ctx = null;
+                }
+                
+                // Canaux
+                if (this.ctx) {
+                    this.musicGain = this.ctx.createGain();
+                    this.musicGain.connect(this.ctx.destination);
+                    this.musicGain.gain.value = 0.25; // Vol Music
+
+                    this.fxGain = this.ctx.createGain();
+                    this.fxGain.connect(this.ctx.destination);
+                    this.fxGain.gain.value = 0.22; // Vol FX
+                }
+
+                // Musique (fallback to HTMLAudio for compat)
+                this.bgMusic = new Audio('https://www.bensound.com/bensound-music/bensound-creativeminds.mp3');
+                this.bgMusic.volume = 0;
+                this.bgMusic.loop = true;
+                
+                // try play (may be blocked until user interaction)
+                this.bgMusic.play().then(() => this.fadeIn())
+                    .catch(e => console.log("Auto-play bloqué par navigateur, clic requis"));
+
+                document.getElementById('audio-controls').classList.add('show');
+            },
+
+            fadeIn: function() {
+                let vol = 0;
+                const interval = setInterval(() => {
+                    if (vol < 0.25) { vol += 0.01; this.bgMusic.volume = vol; } 
+                    else { clearInterval(interval); }
+                }, 100);
+            },
+
+            // BRUITAGE 1 : TIC (Triangle wave) -- conservé
+            playTick: function() {
+                if(this.isMuted || !this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                const filter = this.ctx.createBiquadFilter();
+
+                filter.type = "bandpass"; filter.frequency.value = 1500; filter.Q.value = 3;
+                osc.connect(filter); filter.connect(gain); gain.connect(this.fxGain);
+
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(50, this.ctx.currentTime + 0.08);
+
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
+
+                osc.start(); osc.stop(this.ctx.currentTime + 0.08);
+            },
+
+            // BRUITAGE 2 : POP (Sine sweep) -- conservé
+            playPop: function() {
+                if(this.isMuted || !this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain); gain.connect(this.fxGain);
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(200, this.ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(800, this.ctx.currentTime + 0.3);
+
+                gain.gain.setValueAtTime(0, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.2, this.ctx.currentTime + 0.1);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
+
+                osc.start(); osc.stop(this.ctx.currentTime + 0.3);
+            },
+
+            // BRUITAGE 3 : HOVER -- conservé
+            playHover: function() {
+                if(this.isMuted) return;
+                // quick HTMLAudio fallback for hover so it always triggers even if AudioContext blocked
+                if (!this.ctx) {
+                    const a = new Audio();
+                    a.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA="; // tiny silent or placeholder
+                    // we prefer using oscillator when available
+                    return;
+                }
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain); gain.connect(this.fxGain);
+
+                osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+                gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
+
+                osc.start(); osc.stop(this.ctx.currentTime + 0.1);
+            },
+
+            // NOUVEAU: BRUITAGE COUNT-UP : Click numérique plus fort
+            playCountUpFX: function() {
+                if (this.isMuted || !this.ctx) return;
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                const filter = this.ctx.createBiquadFilter();
+
+                filter.type = "highpass";
+                filter.frequency.value = 800;
+
+                osc.type = "square";
+                osc.frequency.setValueAtTime(1200, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(140, this.ctx.currentTime + 0.06);
+
+                gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.06);
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.fxGain);
+
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.06);
+            },
+
+            // NOUVEAU: Achievement sound (satisfying chime)
+            playAchievement: function() {
+                if (this.isMuted || !this.ctx) return;
+                // chord of 3 oscillators
+                const now = this.ctx.currentTime;
+                const freqs = [880, 1100, 660];
+                const gains = [];
+                const oscs = [];
+
+                freqs.forEach((f, i) => {
+                    const o = this.ctx.createOscillator();
+                    const g = this.ctx.createGain();
+                    o.type = i === 1 ? 'sine' : 'triangle';
+                    o.frequency.setValueAtTime(f, now + i * 0.02);
+                    o.connect(g);
+                    g.connect(this.fxGain);
+                    g.gain.setValueAtTime(0.0001, now);
+                    g.gain.exponentialRampToValueAtTime(0.15 / (i+1), now + 0.04 + i*0.02);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+                    o.start(now + i * 0.02);
+                    o.stop(now + 0.9);
+                    oscs.push(o); gains.push(g);
+                });
+            },
+
+            // NOUVEAU: Woosh (for CTA appearance)
+            playWoosh: function() {
+                if (this.isMuted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = "lowpass";
+                filter.frequency.setValueAtTime(2000, now);
+
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(1200, now);
+                osc.frequency.exponentialRampToValueAtTime(200, now + 0.35);
+
+                gain.gain.setValueAtTime(0.001, now);
+                gain.gain.exponentialRampToValueAtTime(0.18, now + 0.08);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+
+                osc.connect(filter); filter.connect(gain); gain.connect(this.fxGain);
+                osc.start(now); osc.stop(now + 0.4);
+            },
+
+            // NOUVEAU: voice line using SpeechSynthesis (fallback-friendly)
+            playVoiceLine: function(text = "Merci de contribuer à l'amélioration continue d'AGL.") {
+                if (this.isMuted) return;
+                if ('speechSynthesis' in window) {
+                    try {
+                        const utter = new SpeechSynthesisUtterance(text);
+                        utter.lang = "fr-FR";
+                        utter.rate = 1.05;
+                        utter.volume = 0.9;
+                        window.speechSynthesis.cancel(); // stop previous
+                        window.speechSynthesis.speak(utter);
+                    } catch (e) {
+                        console.warn("TTS not available", e);
+                    }
+                } else {
+                    // fallback to small audio beep if no TTS
+                    if (this.ctx) {
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(640, this.ctx.currentTime);
+                        gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.5);
+                        osc.connect(gain); gain.connect(this.fxGain);
+                        osc.start(); osc.stop(this.ctx.currentTime + 0.5);
+                    }
+                }
+            }
+        };
+
+        /* --- LOGIQUE SCÉNARIO --- */
+        const els = {
+            overlay: document.getElementById('start-overlay'),
+            s1: document.getElementById('scene-1'),
+            s2: document.getElementById('scene-2'),
+            s3: document.getElementById('scene-3'),
+            counter: document.getElementById('counter'),
+            typing: document.getElementById('typing-text'),
+            particles: document.getElementById('particles'),
+            counterFlash: document.getElementById('counter-flash'),
+            ctaButton: document.getElementById('cta-button'),
+            timeBadge: document.getElementById('time-badge')
+        };
+
+        function toggleMute() {
+            audio.isMuted = !audio.isMuted;
+            if(audio.bgMusic) audio.bgMusic.muted = audio.isMuted;
+            const btn = document.querySelector('.mute-btn');
+            btn.innerText = audio.isMuted ? "🔇 Son coupé" : "🔊 Son activé";
+            btn.style.borderColor = audio.isMuted ? "#aaa" : "var(--agl-yellow)";
+            // stop any speech
+            if (audio.isMuted && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+        }
+
+        function initParticles() {
+            for(let i=0; i<20; i++) {
+                let p = document.createElement('div');
+                p.className = 'particle';
+                p.style.left = Math.random() * 100 + 'vw';
+                p.style.animationDelay = Math.random() * 5 + 's';
+                p.style.animationDuration = (8 + Math.random() * 10) + 's';
+                els.particles.appendChild(p);
+                
+                if(i % 3 === 0) {
+                    let l = document.createElement('div');
+                    l.className = 'particle-line';
+                    l.style.left = Math.random() * 100 + 'vw';
+                    l.style.top = Math.random() * 100 + 'vh';
+                    l.style.width = (50 + Math.random() * 100) + 'px';
+                    l.style.transform = `rotate(${Math.random() * 360}deg)`;
+                    els.particles.appendChild(l);
+                }
+            }
+        }
+
+        function startExperience() {
+            audio.init();
+            els.overlay.style.opacity = 0;
+            els.overlay.style.pointerEvents = 'none';
+            setTimeout(() => {
+                els.overlay.style.display = 'none';
+                els.s1.classList.add('active');
+                runCounter();
+            }, 800);
+        }
+
+        function createBurst(x, y, color, count = 16, duration = 900) {
+            const container = document.createElement('div');
+            container.className = 'burst';
+            container.style.left = (x - 12) + 'px';
+            container.style.top = (y - 12) + 'px';
+            document.body.appendChild(container);
+
+            for (let i = 0; i < count; i++) {
+                const el = document.createElement('div');
+                el.style.position = 'absolute';
+                el.style.width = el.style.height = (4 + Math.random()*6) + 'px';
+                el.style.borderRadius = '50%';
+                el.style.background = color;
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 30 + Math.random() * 120;
+                const tx = Math.cos(angle) * dist;
+                const ty = Math.sin(angle) * dist;
+                el.style.left = '0px';
+                el.style.top = '0px';
+                el.style.opacity = 0.95;
+                el.style.transform = 'translate(0,0) scale(1)';
+                el.style.transition = `transform ${duration}ms cubic-bezier(.2,.8,.2,1), opacity ${duration}ms`;
+                container.appendChild(el);
+                // animate in next tick
+                requestAnimationFrame(() => {
+                    el.style.transform = `translate(${tx}px, ${ty}px) scale(${0.6 + Math.random()})`;
+                    el.style.opacity = 0;
+                });
+            }
+
+            setTimeout(() => container.remove(), duration + 50);
+        }
+
+        function runCounter() {
+            const target = 25; 
+            const duration = 2500;
+            let start = null; let lastVal = 0;
+
+            function step(timestamp) {
+                if (!start) start = timestamp;
+                const progress = Math.min((timestamp - start) / duration, 1);
+                const ease = 1 - Math.pow(1 - progress, 3);
+                const currentVal = Math.floor(ease * target);
+                
+                els.counter.innerHTML = currentVal;
+                
+                if (currentVal > lastVal) {
+                    audio.playCountUpFX();
+                    lastVal = currentVal;
+                }
+
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                } else {
+                    // show flash, play achievement sound, and small particle burst
+                    els.counterFlash.classList.add('show');
+                    audio.playAchievement();
+                    // compute counter position center
+                    const rect = els.counter.getBoundingClientRect();
+                    createBurst(rect.left + rect.width/2, rect.top + rect.height/2, 'rgba(255,204,0,0.95)', 22, 900);
+                    setTimeout(() => {
+                        els.counterFlash.classList.remove('show');
+                    }, 550);
+
+                    setTimeout(runScene2, 1000);
+                }
+            }
+            window.requestAnimationFrame(step);
+        }
+
+        async function runScene2() {
+            els.s1.classList.remove('active');
+            await new Promise(r => setTimeout(r, 600));
+            els.s1.style.display = 'none';
+            els.s2.style.display = 'block';
+            requestAnimationFrame(() => els.s2.classList.add('active'));
+
+            await new Promise(r => setTimeout(r, 1000));
+
+            const items = ["Demandes d'absence", "Check-list Camion", "Comptes Clients", "Reprises de service"];
+            
+            for (let item of items) {
+                els.typing.style.opacity = 0;
+                els.typing.style.transform = "translateY(20px)";
+                await new Promise(r => setTimeout(r, 300));
+                
+                els.typing.innerText = item;
+                audio.playPop();
+                els.typing.style.opacity = 1;
+                els.typing.style.transform = "translateY(0)";
+                
+                await new Promise(r => setTimeout(r, 1500));
+            }
+            runScene3();
+        }
+
+        function runScene3() {
+            els.s2.classList.remove('active');
+            setTimeout(() => {
+                els.s2.style.display = 'none';
+                els.s3.style.display = 'block';
+                requestAnimationFrame(() => {
+                    els.s3.classList.add('active');
+                    // CTA animation + sound + voice line
+                    setTimeout(() => {
+                        // add gentle pulse to CTA
+                        els.ctaButton.classList.add('pulse');
+                        // play woosh and voice line
+                        audio.playWoosh();
+                        // short delay then voice line so it doesn't overlap weirdly
+                        setTimeout(() => audio.playVoiceLine("Merci de contribuer à l'amélioration continue d'AGL. Votre avis compte."), 250);
+                    }, 220);
+                });
+            }, 800);
+        }
+
+        // small utility: animate time badge -> scale when scene visible for emphasis
+        function emphasizeTimeBadge() {
+            const tb = els.timeBadge;
+            tb.style.transform = 'scale(1.03)';
+            setTimeout(() => tb.style.transform = 'scale(1)', 600);
+        }
+
+        // init
+        window.onload = () => {
+            initParticles();
+            // add small click/tap handler to resume audio context if needed
+            document.body.addEventListener('click', () => {
+                if (audio.ctx && audio.ctx.state === 'suspended') {
+                    audio.ctx.resume().catch(()=>{});
+                }
+            }, { once: true });
+        };
+
+    </script>
+</body>
+</html>
