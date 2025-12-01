@@ -213,10 +213,22 @@
         @media (max-width: 520px) {
             .cta-button { padding: 14px 30px; font-size: 1rem; }
         }
+    .agl-watermark {
+    position: fixed;
+    inset: 0;
+    background-image: url("logo_agl.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 45%; /* Ajuste la taille ici si tu veux */
+    opacity: 0.04; /* Transparence du watermark */
+    pointer-events: none; /* Le watermark ne bloque aucun clic */
+    z-index: 0;
+    filter: blur(1px) drop-shadow(0 0 6px rgba(0,0,0,0.4));
+}
     </style>
 </head>
 <body>
-
+<div class="agl-watermark"></div>
     <div class="particles" id="particles"></div>
 
     <div id="start-overlay" onclick="startExperience()">
